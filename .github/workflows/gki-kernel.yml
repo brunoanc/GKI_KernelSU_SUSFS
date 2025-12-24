@@ -175,6 +175,14 @@ jobs:
           git clone https://github.com/ShirkNeko/SukiSU_patch.git
           # next修复补丁
           git clone https://github.com/zzh20188/GKI_KernelSU_SUSFS.git zzh_patch
+
+          cd susfs4ksu
+          git checkout d43bc04075be14669202e8ad058a22813468e546
+          cd ..
+
+          cd kernel_patches
+          git checkout 238c4ab682b1dbb0dd1ecb0c242608d0214392a4
+          cd ..
           
       - name: 设置 CONFIG 环境变量
         run: |
@@ -246,7 +254,7 @@ jobs:
                   echo "BRANCH=-s next" >> $GITHUB_ENV
                   ;;
                 "SukiSU")
-                  echo "BRANCH=-s builtin" >> $GITHUB_ENV
+                  echo "BRANCH=-s 209c4eaf2a33befab1626f14b782f9617262bf62" >> $GITHUB_ENV
                   ;;
                 *)
                   echo "BRANCH=-" >> $GITHUB_ENV
@@ -504,6 +512,12 @@ jobs:
           cd drivers
           cp "../../../kernel_patches/samsung/min_kdp/min_kdp.c" min_kdp.c
           echo "obj-y += min_kdp.o" >> Makefile
+
+      - name: Fix WiFi and Bluetooth on Xiaomi 6.6 GKI devices
+        if: ${{ ( inputs.kernel_version == '6.6' ) }}
+        run: |
+          SYMBOL_LIST=$CONFIG/common/android/abi_gki_aarch64_xiaomi
+          echo "device_find_any_child" >> $SYMBOL_LIST
 
       - name: LZ4KD & Lz4k_oplus配置
         if: ${{ inputs.use_zram }}
