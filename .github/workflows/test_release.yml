@@ -65,7 +65,7 @@ jobs:
     uses: ./.github/workflows/get-manager.yml
     secrets: inherit
     with:
-      kernelsu_variant: ${{ inputs.kernelsu_variant }
+      kernelsu_variant: ${{ inputs.kernelsu_variant }}
 
   build-kernel-a15-6-6:
     uses: ./.github/workflows/kernel-a15-6.6.yml
