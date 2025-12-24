@@ -176,18 +176,6 @@ jobs:
           # next修复补丁
           git clone https://github.com/brunoanc/GKI_KernelSU_SUSFS.git zzh_patch
 
-          cd kernel_patches
-          git checkout 238c4ab682b1dbb0dd1ecb0c242608d0214392a4
-          cd ..
-
-          cd susfs4ksu
-          git checkout d43bc04075be14669202e8ad058a22813468e546
-          cd ..
-
-          cd SukiSU_patch
-          git checkout 83aa64b7548890bb1f2eff6c990c03a1802df27b
-          cd ..
-
       - name: 设置 CONFIG 环境变量
         run: |
           # Set CONFIG dynamically based on inputs values
@@ -232,10 +220,6 @@ jobs:
             cd ..
           fi
 
-          #cd common
-          #git checkout 87c4ce66affdfd15427fad8a89bc91c279176d29
-          #cd ..
-
       - name: 使GKI在一加8E平台正常使用
         if: ${{ inputs.supp_op }}
         run: |
@@ -263,7 +247,7 @@ jobs:
                   echo "BRANCH=-s next" >> $GITHUB_ENV
                   ;;
                 "SukiSU")
-                  echo "BRANCH=-s builtin" >> $GITHUB_ENV
+                  echo "BRANCH=-s tmp-builtin" >> $GITHUB_ENV
                   ;;
                 *)
                   echo "BRANCH=-" >> $GITHUB_ENV
@@ -274,7 +258,7 @@ jobs:
               case "$variant_input" in
                 "Official" | "MKSU") echo "BRANCH=-s main" >> $GITHUB_ENV ;;
                 "Next")              echo "BRANCH=-s next" >> $GITHUB_ENV ;;
-                "SukiSU")           echo "BRANCH=-s builtin" >> $GITHUB_ENV ;;
+                "SukiSU")           echo "BRANCH=-s tmp-builtin" >> $GITHUB_ENV ;;
                 *) 
                   echo "错误：未定义开发分支的变体 '$variant_input'" >&2
                   exit 1
@@ -303,7 +287,7 @@ jobs:
             curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash $BRANCH
           elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
             echo "Adding KernelSU SukiSU..."
-            curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s 209c4eaf2a33befab1626f14b782f9617262bf62
+            curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s $BRANCH
           fi
       
       - name: SUKISU管理器信息
@@ -391,7 +375,32 @@ jobs:
             cp ../../zzh_patch/5.10-patch/fdinfo.c.patch ./
             patch -p1 < fdinfo.c.patch
           fi
-  
+
+      #- name: HymoFS 补丁
+      #  if: ${{ inputs.android_version == 'android14' || inputs.android_version == 'android15' }}
+      #  run: |
+      #    cd "$CONFIG/common"
+      #    VERSION="${{ inputs.android_version }}"
+
+      #    echo "Detected Version: $VERSION"
+
+      #    if [ "$VERSION" = "android14" ]; then
+      #    # 6.1
+      #      echo "对 GKI 6.1 进行补丁"
+      #      wget https://raw.githubusercontent.com/Anatdx/HymoFS/refs/heads/android14_6.1/patch/hymofs_with_susfs.patch
+      #      patch -p1 -F 3 < hymofs_with_susfs.patch
+      #      echo "CONFIG_HYMOFS=y" >> arch/arm64/configs/gki_defconfig
+      #    elif [ "$VERSION" = "android15" ]; then
+      #    # 6.6
+      #      echo "对 GKI 6.6 进行补丁"
+      #      wget https://raw.githubusercontent.com/Anatdx/HymoFS/refs/heads/android15_6.6/patch/hymofs_with_susfs.patch
+      #      patch -p1 -F 3 < hymofs_with_susfs.patch
+      #      echo "CONFIG_HYMOFS=y" >> arch/arm64/configs/gki_defconfig
+      #    else
+      #      echo "Error: Unsupported version: $VERSION"
+      #      exit 1
+      #    fi
+
       - name: 一些修复补丁
         run: |
           cd "$CONFIG/common"
@@ -581,7 +590,7 @@ jobs:
         run: |
           cd "$CONFIG"
           echo "Adding BBG..."
-          wget -O- https://raw.githubusercontent.com/vc-teahouse/Baseband-guard/75668b6cbd039df0d224e9d14b2a3941c602fd1c/setup.sh | sed 's|git clone --branch "\$ref" "\$BBG_REPO" "\$BBG_DIR"|git clone "\$BBG_REPO" "\$BBG_DIR"\n            git -C "\$BBG_DIR" checkout "\$ref"|' | bash -s 75668b6cbd039df0d224e9d14b2a3941c602fd1c
+          wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
           echo "CONFIG_BBG=y" >> common/arch/arm64/configs/gki_defconfig
           
           # Before sed: Show the original LSM default line for comparison
@@ -759,7 +768,7 @@ jobs:
           if [ "${{ inputs.kernel_version }}" != "6.6" ]; then
             echo "Patching Image file..."
             cd "$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
-            curl -LSs "https://github.com/SukiSU-Ultra/SukiSU_patch/raw/83aa64b7548890bb1f2eff6c990c03a1802df27b/kpm/patch_linux" -o patch
+            curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
             chmod 777 patch
             ./patch
             rm -rf Image
@@ -773,7 +782,7 @@ jobs:
 
             echo "Patching Image file..."
             cd "$CONFIG/bazel-bin/common/kernel_aarch64/"
-            curl -LSs "https://github.com/SukiSU-Ultra/SukiSU_patch/raw/83aa64b7548890bb1f2eff6c990c03a1802df27b/kpm/patch_linux" -o patch
+            curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
             chmod 777 patch
             ./patch
             rm -rf Image
